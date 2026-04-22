@@ -274,3 +274,18 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+-- =====================================
+-- PRUEBAS DE FUNCIONES
+-- =====================================
+
+SELECT id, fn_cernidor(id) FROM inventario_pirata;
+
+SELECT id, fn_reloj_arena(fecha_ingreso, meses_validez) 
+FROM inventario_pirata;
+
+SELECT nombre_sucio, fn_purificador(nombre_sucio) 
+FROM inventario_pirata;
+
+SELECT id, fn_espia_tortuga(categoria, precio_finca) 
+FROM inventario_pirata;
