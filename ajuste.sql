@@ -59,5 +59,131 @@ INSERT INTO inventario_pirata (id, nombre_sucio, categoria, precio_finca, priori
 -- ==========================================================
 -- RESULTADO FINAL ESPERADO (VERIFICACIÓN)
 -- ==========================================================
+
+
+-- -------------------------------------------------------------------------
+-- Nomeclatura del codigo
+-- 
+-- Parámetros de entrada: usar prefijo p_
+-- Ejemplos: p_id, p_fecha, p_meses, p_cat, p_prec, p_nombre, p_factor, p_texto
+--
+-- Variables internas/locales: usar prefijo v_
+-- Ejemplos: v_resultado, v_fecha_actual, v_fecha_vencimiento
+--
+-- Regla de nulidad:
+-- Si una entrada obligatoria viene NULL, la función devuelve un valor seguro.
+-- En validaciones:
+--   - fn_cernidor(NULL) devuelve FALSE.
+--   - fn_reloj_arena(NULL, NULL) devuelve 'Expirado'.
+--
+-- Contrato type-safe:
+--   fn_cernidor(p_id INT) RETURNS BOOLEAN
+--   fn_reloj_arena(p_fecha DATE, p_meses INT) RETURNS VARCHAR(10)
+-- ---------------------------------------------------------------------------
+
+
+
 -- Los únicos IDs que deben generar un Hash al final son el 3 y el 7.
 -- La consulta final debe devolver: hash(ID 3) # hash(ID 7)
+
+-- Funciones de integrante A: Validaciones
+
+Delimiter $$
+DROP FUNCTION IF EXISTS fn_cernidor$$
+
+CREATE FUNCTION fn_cernidor(p_id INT)
+RETURNS BOOLEAN
+DETERMINISTIC
+NO SQL
+BEGIN
+ -- Llave 1: fn_cernidor
+    -- Variables:
+    --   v_id_validado: copia interna del ID recibido.
+    --   v_es_primo: bandera booleana que indica si el número es primo.
+    --   v_divisor: contador usado para probar divisores.
+    --   v_limite_revision: raíz cuadrada del ID, usada como límite del ciclo.
+    --   v_resultado: salida final de la función.
+
+
+    DECLARE v_id_validado INT DEFAULT 0;
+    DECLARE v_es_primo BOOLEAN DEFAULT TRUE;
+    DECLARE v_divisor INT DEFAULT 2;
+    DECLARE v_limite_revision INT DEFAULT 0;
+    DECLARE v_resultado BOOLEAN DEFAULT FALSE;
+    
+    IF p_id IS NULL THEN
+        SET v_resultado = FALSE;
+    ELSE
+        SET v_id_validado = p_id;
+
+        IF v_id_validado < 2 THEN
+            SET v_es_primo = FALSE;
+        ELSE
+            SET v_limite_revision = FLOOR(SQRT(v_id_validado));
+
+            WHILE v_divisor <= v_limite_revision AND v_es_primo = TRUE DO
+
+                IF MOD(v_id_validado, v_divisor) = 0 THEN
+                    SET v_es_primo = FALSE;
+                END IF;
+
+                SET v_divisor = v_divisor + 1;
+
+            END WHILE;
+        END IF;
+
+        SET v_resultado = v_es_primo;
+    END IF;
+
+    RETURN v_resultado;
+END$$
+
+DROP FUNCTION IF EXISTS fn_reloj_arena$$
+
+CREATE FUNCTION fn_reloj_arena(p_fecha DATE, p_meses INT)
+RETURNS VARCHAR(10)
+NOT DETERMINISTIC
+NO SQL
+BEGIN
+    -- Llave 2: fn_reloj_arena
+    --   v_fecha_ingreso: copia interna de la fecha recibida.
+    --   v_meses_validez: copia interna de los meses recibidos.
+    --   v_fecha_actual: fecha actual del servidor.
+    --   v_fecha_vencimiento: fecha calculada de vencimiento.
+    --   v_estado_resultado: salida final, puede ser 'Fresco' o 'Expirado'.
+    DECLARE v_fecha_ingreso DATE;
+    DECLARE v_meses_validez INT DEFAULT 0;
+    DECLARE v_fecha_actual DATE;
+    DECLARE v_fecha_vencimiento DATE;
+    DECLARE v_estado_resultado VARCHAR(10) DEFAULT 'Expirado';
+
+    IF p_fecha IS NULL OR p_meses IS NULL THEN
+        SET v_estado_resultado = 'Expirado';
+    ELSE
+        SET v_fecha_ingreso = p_fecha;
+        SET v_meses_validez = p_meses;
+        SET v_fecha_actual = CURDATE();
+
+        IF v_meses_validez < 0 THEN
+            SET v_estado_resultado = 'Expirado';
+        ELSE
+            SET v_fecha_vencimiento = DATE_ADD(v_fecha_ingreso, INTERVAL v_meses_validez MONTH);
+
+            IF v_fecha_vencimiento > v_fecha_actual THEN
+                SET v_estado_resultado = 'Fresco';
+            ELSE
+                SET v_estado_resultado = 'Expirado';
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN v_estado_resultado;
+END$$
+
+DELIMITER ;
+
+SELECT 
+    id,
+    fn_cernidor(id) AS es_primo
+FROM inventario_pirata
+ORDER BY id;
