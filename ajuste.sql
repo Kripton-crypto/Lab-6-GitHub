@@ -187,3 +187,105 @@ SELECT
     fn_cernidor(id) AS es_primo
 FROM inventario_pirata
 ORDER BY id;
+
+-- Funciones de integrante B: Mercado y Limpieza
+
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS fn_purificador$$
+
+CREATE FUNCTION fn_purificador(p_nombre TEXT)
+RETURNS TEXT
+DETERMINISTIC
+NO SQL
+BEGIN
+    -- Llave 4: fn_purificador
+    --   v_nombre_original: copia del texto recibido.
+    --   v_nombre_limpio: texto sin caracteres especiales.
+    --   v_resultado: salida final de la función.
+
+    DECLARE v_nombre_original TEXT;
+    DECLARE v_nombre_limpio TEXT;
+    DECLARE v_resultado TEXT DEFAULT '';
+
+    IF p_nombre IS NULL THEN
+        SET v_resultado = '';
+    ELSE
+        SET v_nombre_original = p_nombre;
+
+        -- Eliminar caracteres no alfabéticos
+        SET v_nombre_limpio = REGEXP_REPLACE(v_nombre_original, '[^a-zA-ZáéíóúÁÉÍÓÚñÑ]', '');
+
+        -- Quitar espacios sobrantes
+        SET v_resultado = TRIM(v_nombre_limpio);
+    END IF;
+
+    RETURN v_resultado;
+END$$
+
+DELIMITER ;
+
+
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS fn_espia_tortuga$$
+
+CREATE FUNCTION fn_espia_tortuga(p_cat VARCHAR(100), p_prec DECIMAL(10,2))
+RETURNS DECIMAL(3,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    -- Llave 3: fn_espia_tortuga
+    --   v_categoria: copia de la categoría recibida.
+    --   v_precio_finca: copia del precio recibido.
+    --   v_precio_mercado: precio de referencia desde la tabla mercado_negro.
+    --   v_resultado: salida final (1.2 o 0.8).
+
+    DECLARE v_categoria VARCHAR(100);
+    DECLARE v_precio_finca DECIMAL(10,2);
+    DECLARE v_precio_mercado DECIMAL(10,2);
+    DECLARE v_resultado DECIMAL(3,2) DEFAULT 0.8;
+
+    IF p_cat IS NULL OR p_prec IS NULL THEN
+        SET v_resultado = 0.8;
+    ELSE
+        SET v_categoria = p_cat;
+        SET v_precio_finca = p_prec;
+
+        -- Obtener precio de referencia del mercado
+        SELECT precio_referencia
+        INTO v_precio_mercado
+        FROM mercado_negro
+        WHERE categoria = v_categoria
+        LIMIT 1;
+
+        IF v_precio_mercado IS NULL THEN
+            SET v_resultado = 0.8;
+        ELSE
+            IF v_precio_finca > v_precio_mercado THEN
+                SET v_resultado = 1.2;
+            ELSE
+                SET v_resultado = 0.8;
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN v_resultado;
+END$$
+
+DELIMITER ;
+
+-- =====================================
+-- PRUEBAS DE FUNCIONES
+-- =====================================
+
+SELECT id, fn_cernidor(id) FROM inventario_pirata;
+
+SELECT id, fn_reloj_arena(fecha_ingreso, meses_validez) 
+FROM inventario_pirata;
+
+SELECT nombre_sucio, fn_purificador(nombre_sucio) 
+FROM inventario_pirata;
+
+SELECT id, fn_espia_tortuga(categoria, precio_finca) 
+FROM inventario_pirata;
