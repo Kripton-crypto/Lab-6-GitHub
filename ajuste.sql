@@ -214,7 +214,7 @@ BEGIN
         SET v_nombre_original = p_nombre;
 
         -- Eliminar caracteres no alfabéticos
-        SET v_nombre_limpio = REGEXP_REPLACE(v_nombre_original, '[^a-zA-ZáéíóúÁÉÍÓÚñÑ]', '');
+        SET v_nombre_limpio = REGEXP_REPLACE(v_nombre_original, '[^a-zA-Z]', '');
 
         -- Quitar espacios sobrantes
         SET v_resultado = TRIM(v_nombre_limpio);
