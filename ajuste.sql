@@ -275,6 +275,117 @@ END$$
 
 DELIMITER ;
 
+
+-- Funciones de integrante C: Estética y Seguridad
+
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS fn_escultor$$
+
+CREATE FUNCTION fn_escultor(p_texto TEXT, p_factor DECIMAL(3,2))
+RETURNS TEXT
+DETERMINISTIC
+NO SQL
+BEGIN
+    -- Llave 5: fn_escultor
+    -- v_texto_entrada: copia interna del texto recibido.
+    -- v_factor_entrada: copia interna del factor recibido.
+    -- v_texto_transformado: texto en mayúsculas o minúsculas según factor.
+    -- v_sufijo: texto descriptivo a concatenar.
+    -- v_resultado: salida final de la función.
+
+    DECLARE v_texto_entrada TEXT;
+    DECLARE v_factor_entrada DECIMAL(3,2);
+    DECLARE v_texto_transformado TEXT DEFAULT '';
+    DECLARE v_sufijo VARCHAR(50) DEFAULT '';
+    DECLARE v_resultado TEXT DEFAULT '';
+
+    IF p_texto IS NULL OR p_factor IS NULL THEN
+        SET v_resultado = IFNULL(p_texto, '');
+    ELSE
+        SET v_texto_entrada = p_texto;
+        SET v_factor_entrada = p_factor;
+
+        IF v_factor_entrada > 1 THEN
+            SET v_texto_transformado = UPPER(v_texto_entrada);
+            SET v_sufijo = '_ALTA_PRIORIDAD';
+        ELSE
+            SET v_texto_transformado = LOWER(v_texto_entrada);
+            SET v_sufijo = '_baja_prioridad';
+        END IF;
+
+        SET v_resultado = CONCAT(v_texto_transformado, v_sufijo);
+    END IF;
+
+    RETURN v_resultado;
+END$$
+
+
+DROP FUNCTION IF EXISTS fn_notario$$
+
+CREATE FUNCTION fn_notario(p_texto TEXT)
+RETURNS TEXT
+DETERMINISTIC
+MODIFIES SQL DATA
+BEGIN
+    -- Llave 6: fn_notario
+    -- v_usuario: usuario de sesión actual.
+    -- v_timestamp: fecha y hora exacta de la ejecución.
+    -- v_mensaje: mensaje descriptivo para la bitácora.
+    -- v_resultado: salida final, mismo texto recibido.
+
+    DECLARE v_usuario VARCHAR(100);
+    DECLARE v_timestamp DATETIME;
+    DECLARE v_mensaje TEXT;
+    DECLARE v_resultado TEXT DEFAULT '';
+
+    IF p_texto IS NULL THEN
+        SET v_resultado = '';
+    ELSE
+        SET v_usuario = CURRENT_USER();
+        SET v_timestamp = NOW();
+        SET v_mensaje = CONCAT('Pipeline activo | Texto procesado: ', p_texto);
+
+        INSERT INTO logs_hashy (nombre_funcion, fecha_ejecucion, mensaje_accion, usuario_db)
+        VALUES ('fn_notario', v_timestamp, v_mensaje, v_usuario);
+
+        SET v_resultado = p_texto;
+    END IF;
+
+    RETURN v_resultado;
+END$$
+
+
+DROP FUNCTION IF EXISTS fn_gran_sello$$
+
+CREATE FUNCTION fn_gran_sello(p_texto TEXT)
+RETURNS VARCHAR(255)
+DETERMINISTIC
+NO SQL
+BEGIN
+    -- Llave 7: fn_gran_sello
+    -- v_texto_entrada: copia interna del texto recibido.
+    -- v_hash: resultado del algoritmo MD5.
+    -- v_sello: cadena final formateada de longitud fija.
+
+    DECLARE v_texto_entrada TEXT;
+    DECLARE v_hash VARCHAR(255);
+    DECLARE v_sello VARCHAR(255) DEFAULT '';
+
+    IF p_texto IS NULL THEN
+        SET v_sello = LPAD('', 32, '0');
+    ELSE 
+        SET v_texto_entrada = p_texto;
+        SET v_hash = MD5(v_texto_entrada);
+        SET v_sello = LPAD(v_hash, 32, '0');
+    END IF;
+
+    RETURN v_sello;
+END$$
+
+DELIMITER ;
+
+
 -- =====================================
 -- PRUEBAS DE FUNCIONES
 -- =====================================
@@ -289,3 +400,11 @@ FROM inventario_pirata;
 
 SELECT id, fn_espia_tortuga(categoria, precio_finca) 
 FROM inventario_pirata;
+
+SELECT fn_escultor('gomitaofresa', 0.8);
+SELECT fn_escultor('gomitamagica', 1.2);
+
+SELECT fn_notario('gomitaofresa_baja_prioridad');
+SELECT * FROM logs_hashy;
+
+SELECT fn_gran_sello('gomitaofresa_baja_prioridad');
