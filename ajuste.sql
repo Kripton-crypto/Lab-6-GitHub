@@ -54,7 +54,7 @@ INSERT INTO inventario_pirata (id, nombre_sucio, categoria, precio_finca, priori
 (4, '---TRUFA_Oscura---', 'Chocolates', 40.00, 5, '2026-01-10', 5),       -- ID 4: No es primo.
 (5, 'Caramelo_Salado!!', 'Caramelos', 18.00, 7, '2025-12-01', 2),         -- ID 5: VENCIDO.
 (6, 'Gomita_Osa', 'Gomitas', 25.00, 11, '2026-04-10', 8),                  -- ID 6: No es primo.
-(7, '  !!Gomita_Mágica??  ', 'Gomitas', 22.00, 13, '2026-04-01', 10);     -- ID 7: PASA (Primo + Fresco).
+(7, '  !!Gomita_Mágica??  ', 'Gomitas', 22.00, 13, '2026-04-01', 10);    -- ID 7: PASA (Primo + Fresco).
 
 -- ==========================================================
 -- RESULTADO FINAL ESPERADO (VERIFICACIÓN)
@@ -214,7 +214,7 @@ BEGIN
         SET v_nombre_original = p_nombre;
 
         -- Eliminar caracteres no alfabéticos
-        SET v_nombre_limpio = REGEXP_REPLACE(v_nombre_original, '[^a-zA-Z]', '');
+        SET v_nombre_limpio = REGEXP_REPLACE(v_nombre_original, '[^a-zA-ZáéíóúÁÉÍÓÚñÑ]', '');
 
         -- Quitar espacios sobrantes
         SET v_resultado = TRIM(v_nombre_limpio);
@@ -274,117 +274,6 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
--- Funciones de integrante C: Estética y Seguridad
-
-DELIMITER $$
-
-DROP FUNCTION IF EXISTS fn_escultor$$
-
-CREATE FUNCTION fn_escultor(p_texto TEXT, p_factor DECIMAL(3,2))
-RETURNS TEXT
-DETERMINISTIC
-NO SQL
-BEGIN
-    -- Llave 5: fn_escultor
-    -- v_texto_entrada: copia interna del texto recibido.
-    -- v_factor_entrada: copia interna del factor recibido.
-    -- v_texto_transformado: texto en mayúsculas o minúsculas según factor.
-    -- v_sufijo: texto descriptivo a concatenar.
-    -- v_resultado: salida final de la función.
-
-    DECLARE v_texto_entrada TEXT;
-    DECLARE v_factor_entrada DECIMAL(3,2);
-    DECLARE v_texto_transformado TEXT DEFAULT '';
-    DECLARE v_sufijo VARCHAR(50) DEFAULT '';
-    DECLARE v_resultado TEXT DEFAULT '';
-
-    IF p_texto IS NULL OR p_factor IS NULL THEN
-        SET v_resultado = IFNULL(p_texto, '');
-    ELSE
-        SET v_texto_entrada = p_texto;
-        SET v_factor_entrada = p_factor;
-
-        IF v_factor_entrada > 1 THEN
-            SET v_texto_transformado = UPPER(v_texto_entrada);
-            SET v_sufijo = '_ALTA_PRIORIDAD';
-        ELSE
-            SET v_texto_transformado = LOWER(v_texto_entrada);
-            SET v_sufijo = '_baja_prioridad';
-        END IF;
-
-        SET v_resultado = CONCAT(v_texto_transformado, v_sufijo);
-    END IF;
-
-    RETURN v_resultado;
-END$$
-
-
-DROP FUNCTION IF EXISTS fn_notario$$
-
-CREATE FUNCTION fn_notario(p_texto TEXT)
-RETURNS TEXT
-DETERMINISTIC
-MODIFIES SQL DATA
-BEGIN
-    -- Llave 6: fn_notario
-    -- v_usuario: usuario de sesión actual.
-    -- v_timestamp: fecha y hora exacta de la ejecución.
-    -- v_mensaje: mensaje descriptivo para la bitácora.
-    -- v_resultado: salida final, mismo texto recibido.
-
-    DECLARE v_usuario VARCHAR(100);
-    DECLARE v_timestamp DATETIME;
-    DECLARE v_mensaje TEXT;
-    DECLARE v_resultado TEXT DEFAULT '';
-
-    IF p_texto IS NULL THEN
-        SET v_resultado = '';
-    ELSE
-        SET v_usuario = CURRENT_USER();
-        SET v_timestamp = NOW();
-        SET v_mensaje = CONCAT('Pipeline activo | Texto procesado: ', p_texto);
-
-        INSERT INTO logs_hashy (nombre_funcion, fecha_ejecucion, mensaje_accion, usuario_db)
-        VALUES ('fn_notario', v_timestamp, v_mensaje, v_usuario);
-
-        SET v_resultado = p_texto;
-    END IF;
-
-    RETURN v_resultado;
-END$$
-
-
-DROP FUNCTION IF EXISTS fn_gran_sello$$
-
-CREATE FUNCTION fn_gran_sello(p_texto TEXT)
-RETURNS VARCHAR(255)
-DETERMINISTIC
-NO SQL
-BEGIN
-    -- Llave 7: fn_gran_sello
-    -- v_texto_entrada: copia interna del texto recibido.
-    -- v_hash: resultado del algoritmo MD5.
-    -- v_sello: cadena final formateada de longitud fija.
-
-    DECLARE v_texto_entrada TEXT;
-    DECLARE v_hash VARCHAR(255);
-    DECLARE v_sello VARCHAR(255) DEFAULT '';
-
-    IF p_texto IS NULL THEN
-        SET v_sello = LPAD('', 32, '0');
-    ELSE 
-        SET v_texto_entrada = p_texto;
-        SET v_hash = MD5(v_texto_entrada);
-        SET v_sello = LPAD(v_hash, 32, '0');
-    END IF;
-
-    RETURN v_sello;
-END$$
-
-DELIMITER ;
-
 
 -- =====================================
 -- PRUEBAS DE FUNCIONES
