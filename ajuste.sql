@@ -54,7 +54,7 @@ INSERT INTO inventario_pirata (id, nombre_sucio, categoria, precio_finca, priori
 (4, '---TRUFA_Oscura---', 'Chocolates', 40.00, 5, '2026-01-10', 5),       -- ID 4: No es primo.
 (5, 'Caramelo_Salado!!', 'Caramelos', 18.00, 7, '2025-12-01', 2),         -- ID 5: VENCIDO.
 (6, 'Gomita_Osa', 'Gomitas', 25.00, 11, '2026-04-10', 8),                  -- ID 6: No es primo.
-(7, '  !!Gomita_Mágica??  ', 'Gomitas', 22.00, 13, '2026-04-01', 10);    -- ID 7: PASA (Primo + Fresco).
+(7, '  !!Gomita_Mágica??  ', 'Gomitas', 22.00, 13, '2026-04-01', 10);  -- ID 7: PASA (Primo + Fresco).
 
 -- ==========================================================
 -- RESULTADO FINAL ESPERADO (VERIFICACIÓN)
